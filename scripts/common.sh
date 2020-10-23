@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Docker image name for this project
-export DOCKER_IMAGE_NAME="tobias/default"
+export DOCKER_IMAGE_NAME="tobias/learning-feature-representations"
 
 # Path to where in the docker container the project root will be mounted
 export DOCKER_WORKSPACE_PATH="/workspace"
