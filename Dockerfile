@@ -9,4 +9,4 @@ ARG DOCKER_WORKSPACE_PATH
 RUN mkdir -p $DOCKER_WORKSPACE_PATH/src
 WORKDIR $DOCKER_WORKSPACE_PATH/src
 
-RUN pip install scipy
+RUN pip install scipy jupyter matplotlib

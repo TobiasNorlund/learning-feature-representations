@@ -22,9 +22,9 @@ def get_mnist_data(path, standardize=True, add_noise: bool=False):
     assert X_train.shape[1] == DATA_DIM, "DATA_DIM didn't match the actual data"
     assert X_test.shape[1] == DATA_DIM, "DATA_DIM didn't match the actual data"
 
+    X_mean = X_train.mean(axis=0)
     if standardize:
         # Subtract the mean intensity of each pixel
-        X_mean = X_train.mean(axis=0)
         X_train -= X_mean
         X_test -= X_mean
 
@@ -33,7 +33,7 @@ def get_mnist_data(path, standardize=True, add_noise: bool=False):
         X_train += np.random.normal(0, 1/100, size=X_train.shape)
         X_test += np.random.normal(0, 1/100, size=X_test.shape)
 
-    return X_train, X_test
+    return X_train, X_test, X_mean
 
 
 class NoiseDataset(torch.utils.data.IterableDataset):
@@ -72,13 +72,13 @@ class GaussianEBM(torch.nn.Module):
         return log_probs.squeeze(-1).squeeze(-1)
 
 
-def train_nce(batch_size, eta):
+def train_nce(batch_size, eta, mnist_data_path, max_steps=np.inf):
     # Get the MNIST data
-    mnist_train, _ = get_mnist_data("../data/", add_noise=True)
+    mnist_train, _, _ = get_mnist_data(mnist_data_path, add_noise=True)
     print(f"Loaded {len(mnist_train)} training examples")
 
     # Create noise data source
-    noise_dataset = NoiseDataset(cov=np.diag(mnist_train.var(axis=0) * 2 )) #cov=np.diag(np.ones(DATA_DIM) * 1/100))
+    noise_dataset = NoiseDataset(cov=np.diag(mnist_train.var(axis=0) * 2 ))
 
     mnist_dataloader = DataLoader(mnist_train, batch_size=int(batch_size*eta), shuffle=True)
     noise_dataloader = DataLoader(noise_dataset, batch_size=int(batch_size*(1-eta)))
@@ -109,18 +109,24 @@ def train_nce(batch_size, eta):
 
     # Training loop
     for step, (mnist_batch, noise_batch) in enumerate(zip(mnist_dataloader, noise_dataloader)):
+        if step > max_steps:
+            break
         optimizer.zero_grad()
         
         loss = nce_loss(mnist_batch, noise_batch)
         
         loss.backward()
-        print(f"Loss: {loss.detach().numpy()}")
-        print(f"log_Z: {model.log_Z}")
-        print(f"Grad log_Z: {model.log_Z.grad}")
+        print(f"{step}: Loss: {loss.detach().numpy()}")
+        print(f"\tlog_Z: {model.log_Z}")
+        sign, neg_logdet = np.linalg.slogdet(model.precision_matrix.detach().numpy())
+        print(f"\tTrue log_Z: {28*28/2*np.log(2*np.pi) - 1/2*neg_logdet}")
+        print(f"\tGrad log_Z: {model.log_Z.grad}")
 
         optimizer.step()
         print()
+    
+    return model.precision_matrix
 
 
 if __name__ == "__main__":
-    train_nce(batch_size=100, eta=0.5)
+    train_nce(batch_size=100, eta=0.5, minst_data_path="../data/")
