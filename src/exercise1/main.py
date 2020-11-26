@@ -137,8 +137,8 @@ def train_nce(batch_size, eta, mnist_data_path, max_steps=np.inf, mask_precision
         print(f"d: {d.mean()}")
 
         # Only correct if nu = 1 !!
-        loss_term_1 = (a - torch.logsumexp(torch.stack((a, b), dim=1), dim=1)).mean()
-        loss_term_2 = (d - torch.logsumexp(torch.stack((c, d), dim=1), dim=1)).mean()
+        loss_term_1 = (a - torch.logsumexp(torch.stack((a, log(nu)+b), dim=1), dim=1)).mean()
+        loss_term_2 = (log(nu)+d - torch.logsumexp(torch.stack((c, log(nu)+d), dim=1), dim=1)).mean()
         print(f"Loss term 1: {loss_term_1}")
         print(f"Loss term 2: {loss_term_2}")
 
