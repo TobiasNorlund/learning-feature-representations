@@ -1,4 +1,5 @@
 {
     "terminal.integrated.shell.linux": "/bin/bash",
-    "terminal.integrated.inheritEnv": false
+    "terminal.integrated.inheritEnv": false,
+    "python.pythonPath": "/opt/conda/bin/python"
 }
